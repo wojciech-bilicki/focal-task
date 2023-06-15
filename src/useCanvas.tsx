@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import getRandomColorSet, { ColorSet } from "./utils/getRandomColorSet";
+import drawRectangle from "./utils/drawRectangle";
+import drawHandles, { HANDLE_RADIUS } from "./utils/drawHandles";
+import getResizedRectangleCoordinates from "./utils/getResizedRectangleCoordinates";
 
 interface Rectangle {
     coords: [[number, number], [number, number]];
@@ -7,19 +10,13 @@ interface Rectangle {
     id: string;
 }
 
+type HandleId = "top-left" | "bottom-left" | "top-right" | "bottom-right";
+
 interface ResizeHandle {
     x: number;
     y: number;
-    radius: number;
     isSelected: boolean;
-}
-
-interface DrawRectangleArgs {
-    context: CanvasRenderingContext2D;
-    start: [number, number];
-    end: [number, number];
-    colorSet: ColorSet;
-    isSelected: boolean;
+    id: HandleId;
 }
 
 const useCanvas = () => {
@@ -33,10 +30,14 @@ const useCanvas = () => {
         [[number, number], [number, number]] | null
     >(null);
 
-    const [selectedRectangle, setSelectedRectangle] =
-        useState<Rectangle | null>(null);
+    const [selectedRectangleId, setSelectedRectangleId] = useState<
+        string | null
+    >(null);
 
-    const [resizeHandle, setResizeHandles] = useState<ResizeHandle[]>([]);
+    const [resizeHandles, setResizeHandles] = useState<ResizeHandle[]>([]);
+    const [selectedHandleId, setSelectedHandleId] = useState<HandleId | null>(
+        null
+    );
 
     const startPaint = (
         event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
@@ -53,14 +54,87 @@ const useCanvas = () => {
                 coords[1] >= rectangle.coords[0][1] &&
                 coords[1] <= rectangle.coords[1][1]
         );
+
+        const clickedResizeHandle = resizeHandles.find((handle) => {
+            return (
+                coords[0] >= handle.x - HANDLE_RADIUS &&
+                coords[0] <= handle.x + HANDLE_RADIUS &&
+                coords[1] >= handle.y - HANDLE_RADIUS &&
+                coords[1] <= handle.y + HANDLE_RADIUS
+            );
+        });
+
+        if (clickedResizeHandle) {
+            setSelectedHandleId(clickedResizeHandle?.id ?? null);
+        }
+
         if (clickedRectangle) {
-            setSelectedRectangle(clickedRectangle);
-        } else {
+            setSelectedRectangleId(clickedRectangle.id);
+            setResizeHandles([
+                {
+                    x: clickedRectangle.coords[0][0],
+                    y: clickedRectangle.coords[0][1],
+                    isSelected: clickedResizeHandle?.id === "top-left",
+                    id: "top-left",
+                },
+                {
+                    x: clickedRectangle.coords[0][0],
+                    y: clickedRectangle.coords[1][1],
+                    isSelected: clickedResizeHandle?.id === "bottom-left",
+                    id: "bottom-left",
+                },
+                {
+                    x: clickedRectangle.coords[1][0],
+                    y: clickedRectangle.coords[0][1],
+                    isSelected: clickedResizeHandle?.id === "top-right",
+                    id: "top-right",
+                },
+                {
+                    x: clickedRectangle.coords[1][0],
+                    y: clickedRectangle.coords[1][1],
+                    isSelected: clickedResizeHandle?.id === "bottom-right",
+                    id: "bottom-right",
+                },
+            ]);
+            if (!clickedResizeHandle) {
+                setSelectedHandleId(null);
+            }
+        } else if (!clickedResizeHandle) {
             setIsPainting(true);
             setMousePosition(coords);
             setCurrentRectangle([coords, coords]);
-            setSelectedRectangle(null);
+            setResizeHandles([]);
+            setSelectedRectangleId(null);
+            setSelectedHandleId(null);
         }
+    };
+
+    const resizeRectangle = (
+        event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+    ) => {
+        if (!selectedRectangleId) return;
+
+        const newMousePosition: [number, number] = [
+            event.nativeEvent.offsetX,
+            event.nativeEvent.offsetY,
+        ];
+
+        const newRectangles = rectangles.map((rectangle): Rectangle => {
+            if (rectangle.id === selectedRectangleId && selectedHandleId) {
+                return {
+                    ...rectangle,
+                    coords: getResizedRectangleCoordinates({
+                        rectangleCoordinates: rectangle.coords,
+                        newMousePosition,
+                        selectedHandleId,
+                    }),
+                };
+            } else {
+                return rectangle;
+            }
+        });
+
+        setRectangles(newRectangles);
     };
 
     const updateCanvas = () => {
@@ -79,7 +153,7 @@ const useCanvas = () => {
                 start: rectangle.coords[0],
                 end: rectangle.coords[1],
                 colorSet: rectangle.colorSet,
-                isSelected: rectangle.id === selectedRectangle?.id,
+                isSelected: rectangle.id === selectedRectangleId,
             });
         });
 
@@ -96,11 +170,25 @@ const useCanvas = () => {
                 isSelected: false,
             });
         }
+
+        const selectedRectangle = rectangles.find(
+            (rectangle) => rectangle.id === selectedRectangleId
+        );
+
+        if (selectedRectangle) {
+            drawHandles({
+                context,
+                start: selectedRectangle.coords[0],
+                end: selectedRectangle.coords[1],
+                colorSet: selectedRectangle.colorSet,
+                selectedHandleId: selectedHandleId,
+            });
+        }
     };
 
     useEffect(() => {
         updateCanvas();
-    }, [rectangles, currentRectangle, selectedRectangle]);
+    }, [rectangles, currentRectangle, selectedRectangleId, selectedHandleId]);
 
     const paint = (event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
         if (!isPainting) return;
@@ -112,52 +200,6 @@ const useCanvas = () => {
             mousePosition as [number, number],
             newMousePosition,
         ]);
-    };
-
-    const drawRectangle = ({
-        colorSet,
-        context,
-        start,
-        end,
-        isSelected,
-    }: DrawRectangleArgs) => {
-        context.beginPath();
-        context.rect(start[0], start[1], end[0] - start[0], end[1] - start[1]);
-        context.fillStyle = colorSet.transparent;
-        context.strokeStyle = isSelected
-            ? "rgb(255, 255, 255)"
-            : colorSet.opaque;
-        context.lineWidth = 10;
-        context.setLineDash([5, 2, 15, 2, 5, 15]);
-        context.strokeRect(
-            start[0],
-            start[1],
-            end[0] - start[0],
-            end[1] - start[1]
-        );
-        context.fill();
-
-        if (isSelected) {
-            context.beginPath();
-            context.arc(start[0], start[1], 12, 0, 2 * Math.PI);
-            context.fillStyle = colorSet.opaque;
-            context.fill();
-
-            context.beginPath();
-            context.arc(start[0], end[1], 12, 0, 2 * Math.PI);
-            context.fillStyle = colorSet.opaque;
-            context.fill();
-
-            context.beginPath();
-            context.arc(end[0], start[1], 12, 0, 2 * Math.PI);
-            context.fillStyle = colorSet.opaque;
-            context.fill();
-
-            context.beginPath();
-            context.arc(end[0], end[1], 12, 0, 2 * Math.PI);
-            context.fillStyle = colorSet.opaque;
-            context.fill();
-        }
     };
 
     const exitPaint = () => {
@@ -183,10 +225,12 @@ const useCanvas = () => {
     };
 
     return {
+        selectedHandleId,
         canvasRef,
         exitPaint,
         startPaint,
         paint,
+        resizeRectangle,
     };
 };
 

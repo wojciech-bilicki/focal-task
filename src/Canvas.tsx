@@ -15,7 +15,14 @@ enum ImageLoadingState {
 }
 
 const Canvas = ({ imageUrl }: Props) => {
-    const { canvasRef, startPaint, exitPaint, paint } = useCanvas();
+    const {
+        canvasRef,
+        startPaint,
+        exitPaint,
+        paint,
+        selectedHandleId,
+        resizeRectangle,
+    } = useCanvas();
     const imageRef = useRef<HTMLImageElement | null>(null);
 
     const [imageLoadingState, setImageLoadingState] =
@@ -54,7 +61,7 @@ const Canvas = ({ imageUrl }: Props) => {
                 style={{ border: "1px solid black" }}
                 onMouseDown={startPaint}
                 onMouseUp={exitPaint}
-                onMouseMove={paint}
+                onMouseMove={selectedHandleId ? resizeRectangle : paint}
                 width={imageSize?.width}
                 height={imageSize?.height}
             />
