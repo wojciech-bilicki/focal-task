@@ -1,72 +1,91 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import useCanvas from "./useCanvas";
 
 import $ from "./Canvas.module.css";
+import useZoom from "./useZoom";
 
 interface Props {
-    imageUrl: string;
+  imageUrl: string;
 }
 
 enum ImageLoadingState {
-    NOT_STARTED,
-    LOADING,
-    LOADED,
-    ERROR,
+  NOT_STARTED,
+  LOADING,
+  LOADED,
+  ERROR,
 }
 
 const Canvas = ({ imageUrl }: Props) => {
-    const {
-        canvasRef,
-        startPaint,
-        exitPaint,
-        paint,
-        selectedHandleId,
-        resizeRectangle,
-    } = useCanvas();
-    const imageRef = useRef<HTMLImageElement | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
-    const [imageLoadingState, setImageLoadingState] =
-        useState<ImageLoadingState>(ImageLoadingState.NOT_STARTED);
-    const [imageSize, setImageSize] = useState<{
-        width: number;
-        height: number;
-    }>();
+  const {
+    canvasRef,
+    startPaint,
+    exitPaint,
+    paint,
+    selectedHandleId,
+    resizeRectangle,
+    zoomImage,
+    currentCursorLocation,
+  } = useCanvas();
 
-    useEffect(() => {
-        if (
-            imageLoadingState === ImageLoadingState.LOADED &&
-            imageRef.current
-        ) {
-            setImageSize({
-                width: imageRef.current.width,
-                height: imageRef.current.height,
-            });
-        }
-    }, [imageLoadingState]);
+  console.log(currentCursorLocation);
+  const { zoomCanvasRef } = useZoom(zoomImage);
 
-    return (
-        <div className={$.wrapper}>
-            <img
-                src={imageUrl}
-                alt="canvas"
-                ref={imageRef}
-                onLoadStart={() =>
-                    setImageLoadingState(ImageLoadingState.LOADING)
-                }
-                onLoad={() => setImageLoadingState(ImageLoadingState.LOADED)}
-            />
-            <canvas
-                className={$.canvas}
-                ref={canvasRef}
-                style={{ border: "1px solid black" }}
-                onMouseDown={startPaint}
-                onMouseUp={exitPaint}
-                onMouseMove={selectedHandleId ? resizeRectangle : paint}
-                width={imageSize?.width}
-                height={imageSize?.height}
-            />
-        </div>
-    );
+  const [imageLoadingState, setImageLoadingState] = useState<ImageLoadingState>(
+    ImageLoadingState.NOT_STARTED
+  );
+  const [imageSize, setImageSize] = useState<{
+    width: number;
+    height: number;
+  }>();
+
+  useEffect(() => {
+    if (imageLoadingState === ImageLoadingState.LOADED && imageRef.current) {
+      setImageSize({
+        width: imageRef.current.width,
+        height: imageRef.current.height,
+      });
+    }
+  }, [imageLoadingState]);
+
+  console.log(
+    `${currentCursorLocation?.[0] || 0}px ${currentCursorLocation?.[1] || 0}px`
+  );
+  return (
+    <>
+      <div className={$.zoomWrapper}>
+        <img
+          className={$.zoomCanvas}
+          src={imageUrl}
+          style={{
+            objectPosition: `-${currentCursorLocation?.[0] || 0}px -${
+              currentCursorLocation?.[1] || 0
+            }px`,
+          }}
+        />
+        <img className={$.zoomImage} src={zoomImage || ""} />
+      </div>
+      <div className={$.wrapper}>
+        <img
+          src={imageUrl}
+          alt="canvas"
+          ref={imageRef}
+          onLoadStart={() => setImageLoadingState(ImageLoadingState.LOADING)}
+          onLoad={() => setImageLoadingState(ImageLoadingState.LOADED)}
+        />
+        <canvas
+          className={$.canvas}
+          ref={canvasRef}
+          onMouseDown={startPaint}
+          onMouseUp={exitPaint}
+          onMouseMove={selectedHandleId ? resizeRectangle : paint}
+          width={imageSize?.width}
+          height={imageSize?.height}
+        />
+      </div>
+    </>
+  );
 };
 
 export default Canvas;

@@ -1,4 +1,4 @@
-import { ColorSet } from "./getRandomColorSet";
+import { ColorSet } from "../utils/getRandomColorSet";
 
 interface DrawRectangleArgs {
     context: CanvasRenderingContext2D;
@@ -7,6 +7,12 @@ interface DrawRectangleArgs {
     colorSet: ColorSet;
     isSelected: boolean;
 }
+
+const STROKE_WIDTH = 10
+
+const SELECTED_STROKE_COLOR = "rgb(255, 255, 255)"
+
+const LINE_DASH_SPACING = [5, 2, 15, 2, 5, 15]
 
 const drawRectangle = ({
     colorSet,
@@ -18,16 +24,16 @@ const drawRectangle = ({
     context.beginPath();
     context.rect(start[0], start[1], end[0] - start[0], end[1] - start[1]);
     context.fillStyle = colorSet.transparent;
-    context.strokeStyle = isSelected ? "rgb(255, 255, 255)" : colorSet.opaque;
-    context.lineWidth = 10;
-    context.setLineDash([5, 2, 15, 2, 5, 15]);
+    context.strokeStyle = isSelected ? SELECTED_STROKE_COLOR : colorSet.opaque;
+    context.lineWidth = STROKE_WIDTH;
+    context.setLineDash(LINE_DASH_SPACING);
+    context.fill();
     context.strokeRect(
         start[0],
         start[1],
         end[0] - start[0],
         end[1] - start[1]
     );
-    context.fill();
 };
 
 export default drawRectangle;

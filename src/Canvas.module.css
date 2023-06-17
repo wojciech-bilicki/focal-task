@@ -2,8 +2,34 @@
     position: relative;
 }
 
+
 .canvas {
     position: absolute;
     top: 0;
     left: 0;
+    border: 1px solid black;
+}
+
+.zoomWrapper {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+}
+
+.zoomCanvas {
+    position: absolute;
+    top: 0; 
+    left: 0;
+}
+
+.zoomImage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    display: block;
+    object-fit: none;
+    /* width: 200%;
+    height: 200%; */
 }
