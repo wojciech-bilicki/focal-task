@@ -1,5 +1,12 @@
-.wrapper {
+.innerWrapper {
     position: relative;
+}
+
+.outerWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 100px;
 }
 
 
@@ -11,10 +18,14 @@
 }
 
 .zoomWrapper {
-    position: relative;
+    top: 0;
+    left: 0;
+    position: fixed;
     width: 200px;
     height: 200px;
     overflow: hidden;
+    border-radius: 50%;
+    z-index: 3;
 }
 
 .zoomCanvas {
@@ -30,6 +41,20 @@
     z-index: 2;
     display: block;
     object-fit: none;
-    /* width: 200%;
-    height: 200%; */
+}
+
+.deleteButton {
+    background-color: red;
+    color: white;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+}
+
+.zoomLevel {
+    margin-right: 16px;
 }

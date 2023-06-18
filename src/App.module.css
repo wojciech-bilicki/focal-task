@@ -1,0 +1,17 @@
+.input {
+    width: 100%;
+    padding: 12px 20px;
+    box-sizing: border-box;
+}
+
+.wrapper {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+    align-items: flex-end;
+}
+
+.label {
+    flex: 1;
+}

@@ -12,7 +12,6 @@ const getResizedRectangleCoordinates = ({
     [number, number],
     [number, number]
 ] => {
-    console.log(selectedHandleId);
     switch (selectedHandleId) {
         case "top-left":
             return [
