@@ -111,6 +111,35 @@ const Canvas = ({ imageUrl, rectangles, setRectangles }: Props) => {
         }
     };
 
+    const onTouchStart = (event: React.TouchEvent<HTMLCanvasElement>) => {
+        const rect = (
+            event.target as HTMLCanvasElement
+        ).getBoundingClientRect();
+
+        const newMousePosition: [number, number] = [
+            event.touches[0].clientX - rect.left,
+            event.touches[0].clientY - rect.top,
+        ];
+
+        startPaint(newMousePosition);
+    };
+
+    const onTouchMove = (event: React.TouchEvent<HTMLCanvasElement>) => {
+        const rect = (
+            event.target as HTMLCanvasElement
+        ).getBoundingClientRect();
+
+        const newMousePosition: [number, number] = [
+            event.touches[0].clientX - rect.left,
+            event.touches[0].clientY - rect.top,
+        ];
+        if (selectedHandleId) {
+            resizeRectangle(newMousePosition);
+        } else {
+            paint(newMousePosition);
+        }
+    };
+
     return (
         <>
             {currentCursorLocation && (
@@ -184,6 +213,9 @@ const Canvas = ({ imageUrl, rectangles, setRectangles }: Props) => {
                         onMouseDown={onMouseDown}
                         onMouseUp={exitPaint}
                         onMouseMove={onMouseMove}
+                        onTouchStart={onTouchStart}
+                        onTouchEnd={exitPaint}
+                        onTouchMove={onTouchMove}
                         width={imageSize?.width}
                         height={imageSize?.height}
                     />
