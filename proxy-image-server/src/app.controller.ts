@@ -1,5 +1,4 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
-import { AppService } from './app.service';
 import { FileService } from './file.service';
 import hashCode from './utils/hasCode';
 import { join } from 'path';
@@ -17,7 +16,7 @@ export class AppController {
     const filePath = join(__dirname, '../public', filename);
 
     if (!existsSync(filePath)) {
-      await this.fileService.downloadImage(url, filename, filePath);
+      await this.fileService.downloadImage(url, filePath);
     }
     return { url: filename };
   }
